@@ -6,33 +6,44 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	"golang.org/x/tools/container/intsets"
 )
 
 func main() {
-	var err error
-	var frequency int64
+	var frequency int
+	var previous intsets.Sparse
 
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		line := scanner.Text()
-		frequency, err = processInputLine(frequency, line)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	previous.Insert(frequency)
 
-	if err = scanner.Err(); err != nil {
+	inputs, err := parseAdjustmentsFromStdin()
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(frequency)
+	for true {
+		for _, adjustment := range inputs {
+			frequency += adjustment
+			isUnique := previous.Insert(frequency)
+
+			if !isUnique {
+				fmt.Println(frequency)
+				os.Exit(0)
+			}
+		}
+	}
 }
 
-func processInputLine(frequency int64, input string) (int64, error) {
-	i, err := strconv.ParseInt(input, 10, 32)
-	if err != nil {
-		return 0, err
+func parseAdjustmentsFromStdin() ([]int, error) {
+	inputs := []int{}
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			log.Fatal(err)
+		}
+		inputs = append(inputs, line)
 	}
 
-	return frequency + i, nil
+	return inputs, scanner.Err()
 }
