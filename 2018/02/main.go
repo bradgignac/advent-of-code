@@ -5,44 +5,58 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 var twoLetterCount int
 var threeLetterCount int
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		checksumBoxId(scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
+	boxes, err := parseBoxIdsFromStdIn()
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(twoLetterCount * threeLetterCount)
-}
+	for _, a := range boxes {
+		for _, b := range boxes {
+			matches := findMatchingCharacters(a, b)
+			difference := len(a) - len(matches)
 
-func checksumBoxId(id string) {
-	charCount := map[rune]int{}
-	for _, r := range id {
-		charCount[r] = charCount[r] + 1
-	}
-
-	hasExactlyTwo := false
-	hasExactlyThree := false
-	for _, count := range charCount {
-		if count == 2 {
-			hasExactlyTwo = true
-		} else if count == 3 {
-			hasExactlyThree = true
+			if difference == 1 {
+				fmt.Println(strings.Join(matches, ""))
+				os.Exit(0)
+			}
 		}
 	}
 
-	if hasExactlyTwo {
-		twoLetterCount++
+	fmt.Println("Failed to find to packages with difference of one.")
+}
+
+func parseBoxIdsFromStdIn() ([]string, error) {
+	boxes := []string{}
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		boxes = append(boxes, scanner.Text())
 	}
-	if hasExactlyThree {
-		threeLetterCount++
+	return boxes, scanner.Err()
+}
+
+func findMatchingCharacters(a, b string) []string {
+	matches := []string{}
+	for i := range a {
+		if a[i] == b[i] {
+			matches = append(matches, string(a[i]))
+		}
 	}
+	return matches
+}
+
+func calculateDifference(a, b string) int {
+	difference := 0
+	for i := range a {
+		if a[i] != b[i] {
+			difference++
+		}
+	}
+	return difference
 }
